@@ -163,8 +163,8 @@ details.settings[open] > summary h3::before { content: "▾ "; }
 .wammo { line-height: 1; }
 
 /* --- Lobby als Stapel einzelner Karten --- */
-.stack { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 620px; margin: auto; }
-.stack > .card { margin: 0; padding: 16px 20px; }
+.stack { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 620px; margin: auto; }
+.stack > .card { margin: 0 !important; padding: 16px 20px; }
 .stack > .card > h3:first-child, .stack .chat > h3:first-child { margin-top: 0; }
 .stack h2 { margin-bottom: 10px; }
 #lobby-chat { margin: 0; }
