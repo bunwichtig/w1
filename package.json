@@ -1,0 +1,10 @@
+{
+  "name": "krater",
+  "private": true,
+  "type": "module",
+  "description": "Rundenbasiertes Artillerie-Spiel für den Browser mit Online-Multiplayer",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "start": "python3 -m http.server 8080"
+  }
+}
