@@ -161,3 +161,14 @@ details.settings[open] > summary h3::before { content: "▾ "; }
 .wbtn .wkey { position: absolute; top: 2px; left: 4px; border: 0; padding: 0; font-size: 10px; }
 .wbtn { position: relative; }
 .wammo { line-height: 1; }
+
+/* --- Lobby als Stapel einzelner Karten --- */
+.stack { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 620px; margin: auto; }
+.stack > .card { margin: 0; padding: 16px 20px; }
+.stack > .card > h3:first-child, .stack .chat > h3:first-child { margin-top: 0; }
+.stack h2 { margin-bottom: 10px; }
+#lobby-chat { margin: 0; }
+details.settings.card > summary h3 { margin: 0; }
+details.settings.card > summary { min-height: 22px; }
+details.settings.card[open] > summary { margin-bottom: 8px; }
+#settings-sum { margin-top: 0; }

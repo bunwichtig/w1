@@ -280,7 +280,7 @@ function renderLobby() {
   const sizeName = { klein: 'klein', mittel: 'mittel', gross: 'groß' }[st.size];
   const modeName = { hoehlen: 'Höhlen', huegel: 'Hügel', inseln: 'Inseln' }[st.mode];
   $('settings-sum').textContent = `${sizeName} · ${modeName} · ${st.perTeam} ${st.perTeam == 1 ? 'Figur' : 'Figuren'} · ${st.turnTime} s`;
-  if (!settingsInit) { settingsInit = true; $('settings-box').open = isHost && store.get('settings-open') !== '0'; }
+  if (!settingsInit) { settingsInit = true; $('settings-box').open = false; }
   $('btn-add-team').hidden = !isHost || m.teams.length >= MAX_TEAMS;
   $('btn-start').hidden = !isHost;
   $('btn-start').disabled = m.teams.length < 2;
@@ -292,7 +292,6 @@ function renderLobby() {
 }
 
 let settingsInit = false;
-$('settings-box').addEventListener('toggle', () => { if (isHost) store.set('settings-open', $('settings-box').open ? '1' : '0'); });
 for (const [k, id] of Object.entries(SETTING_IDS)) {
   $(id).onchange = () => { if (isHost && session) session.setSettings({ [k]: $(id).value }); };
 }

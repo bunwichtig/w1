@@ -325,14 +325,14 @@ export class Game {
   }
 
   // --- Figuren --------------------------------------------------------------
-  // Figur: Füße auf Höhe y (erste feste Zeile darunter), Körper belegt Zeilen y-12 .. y-1 und Spalten x-3 .. x+3.
+  // Figur: Füße auf Höhe y (erste feste Zeile darunter), Körper belegt Zeilen y-16 .. y-1 und Spalten x-3 .. x+3.
   bodyHit(x, y) {
     const t = this.terrain;
     const xi = Math.round(x), yi = Math.floor(y);
-    for (let dy = 1; dy <= 12; dy += 2) {
+    for (let dy = 1; dy <= 15; dy += 2) {
       for (let dx = -3; dx <= 3; dx += 3) if (t.solid(xi + dx, yi - dy)) return true;
     }
-    return t.solid(xi, yi - 12);
+    return t.solid(xi, yi - 16);
   }
 
   standing(x, y) {
@@ -349,7 +349,7 @@ export class Game {
   figureAt(x, y, exclude) {
     for (const f of this.figures) {
       if (!f.alive || f.id === exclude) continue;
-      if (Math.abs(x - f.x) <= 6 && y >= f.y - 15 && y <= f.y + 1) return f;
+      if (Math.abs(x - f.x) <= 8 && y >= f.y - 19 && y <= f.y + 1) return f;
     }
     return null;
   }
