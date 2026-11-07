@@ -102,7 +102,8 @@ button.icon { width: 38px; height: 38px; padding: 0; background: rgba(18,20,30,.
 body.touch #touch { display: block; }
 body.touch #hud-teams { bottom: auto; top: 56px; }
 body.touch #hud-weapons { bottom: max(10px, env(safe-area-inset-bottom)); max-width: calc(100% - 430px); min-width: 220px; padding: 5px; }
-body.touch .wbtn { padding: 5px 7px; font-size: 12px; }
+body.touch .wbtn { padding: 3px 5px 2px; min-width: 44px; }
+body.touch .wbtn svg { width: 26px; height: 26px; }
 body.touch .wkey, body.touch .winfo > :not(.fuse) { display: none; }
 body.touch .winfo { font-size: 0; margin-top: 4px; }
 body.touch .winfo:empty { display: none; }
@@ -123,3 +124,40 @@ body.touch .winfo:empty { display: none; }
   body:not(.touch) #hud-weapons { max-width: calc(100% - 20px); bottom: 110px; }
   #hud-turn .muted { display: none; }
 }
+
+/* --- Chat --- */
+.chat h3 { display: flex; align-items: center; gap: 10px; }
+.popups { display: inline-flex; align-items: center; gap: 5px; margin: 0 0 0 auto; font-size: 12px; text-transform: none; letter-spacing: 0; color: var(--muted); cursor: pointer; }
+.popups input { display: inline; width: auto; margin: 0; }
+.chat-log { list-style: none; margin: 0 0 6px; padding: 6px 8px; max-height: 140px; min-height: 60px; overflow-y: auto; font-size: 13.5px; line-height: 1.35; background: #1c1f2d; border: 1px solid var(--line); border-radius: 8px; }
+.chat-log li { padding: 2px 0; overflow-wrap: anywhere; }
+.chat-log li .dot { width: 9px; height: 9px; margin-right: 5px; vertical-align: 0; }
+.chat-log li b { margin-right: 4px; }
+.chat-log li.mine b { color: #3dc6ff; }
+.chat-log li.empty { color: var(--muted); font-style: italic; }
+.chat-form { display: flex; gap: 6px; }
+.chat-form input { margin: 0; flex: 1; min-width: 0; padding: 6px 9px; }
+.chat-form button { padding: 6px 11px; font-size: 13.5px; }
+#btn-chat { position: relative; }
+.chat-badge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: #ff4d6d; color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; }
+#game-chat { position: absolute; top: 56px; right: 8px; width: min(320px, calc(100% - 16px)); background: rgba(18,20,30,.9); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+#game-chat .chat-log { max-height: 200px; background: transparent; border: 0; padding: 4px 2px; }
+.chat-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.chat-head .popups { margin-left: auto; }
+.toast.chat-toast { border-left-color: #3dc6ff; text-align: left; }
+
+/* --- Einklappbare Einstellungen --- */
+details.settings { margin-top: 6px; }
+details.settings > summary { list-style: none; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+details.settings > summary::-webkit-details-marker { display: none; }
+details.settings > summary h3 { margin: 18px 0 8px; }
+details.settings > summary h3::before { content: "▸ "; display: inline-block; width: 1em; transition: transform .15s; }
+details.settings[open] > summary h3::before { content: "▾ "; }
+#settings-sum { font-size: 12.5px; margin-top: 10px; }
+
+/* --- Waffen-Symbole --- */
+.wbtn { flex-direction: column; gap: 2px; padding: 5px 9px 3px; min-width: 56px; }
+.wbtn svg { width: 34px; height: 34px; display: block; }
+.wbtn .wkey { position: absolute; top: 2px; left: 4px; border: 0; padding: 0; font-size: 10px; }
+.wbtn { position: relative; }
+.wammo { line-height: 1; }
