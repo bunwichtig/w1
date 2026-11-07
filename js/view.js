@@ -28,6 +28,9 @@ function shade(hex, k) {
   return `rgb(${r},${g},${b})`;
 }
 
+const FIG_SCALE = 1.3;
+const OUTLINE = '#22202b';
+
 export class View {
   constructor(canvas) {
     this.cv = canvas;
@@ -399,17 +402,23 @@ export class View {
     const step = walking ? Math.sin(f.walkT) * 1.5 : 0;
     const bob = walking ? -Math.abs(Math.sin(f.walkT)) : Math.sin(this.time * 2 + f.id) * 0.3;
     const tilt = walking ? Math.sin(f.walkT) * 0.06 : f.st === 2 ? dir * 0.12 : 0;
+    // etwas größer und mit kräftigen Umrissen, damit es comichaft wirkt
+    ctx.save();
+    ctx.translate(x, y); ctx.scale(FIG_SCALE, FIG_SCALE); ctx.translate(-x, -y);
+    ctx.lineJoin = 'round';
     // Füßchen
     ctx.fillStyle = '#d9c7a4';
-    ctx.beginPath(); ctx.ellipse(x - 2.6 + step, y - 1, 2.3, 1.4, 0, 0, 7); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(x + 2.6 - step, y - 1, 2.3, 1.4, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(x - 2.6 + step, y - 1, 2.3, 1.4, 0, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x + 2.6 - step, y - 1, 2.3, 1.4, 0, 0, 7); ctx.fill(); ctx.stroke();
     ctx.save();
     ctx.translate(x, y - 1 + bob);
     ctx.rotate(tilt);
     // Stiel
     ctx.fillStyle = '#f3e6cc';
-    ctx.strokeStyle = '#b39f7c';
-    ctx.lineWidth = 0.9;
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = 1.3;
     ctx.beginPath();
     ctx.moveTo(-4, 0);
     ctx.quadraticCurveTo(-5, -4.5, -3.4, -8.5);
@@ -431,8 +440,8 @@ export class View {
     ctx.beginPath(); ctx.arc(dir * 1.1, -3, 1, 0.2, Math.PI - 0.2); ctx.stroke();
     // Hut
     ctx.fillStyle = col;
-    ctx.strokeStyle = shade(col, 0.45);
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(-8, -8);
     ctx.bezierCurveTo(-8.5, -17, 8.5, -17, 8, -8);
@@ -445,6 +454,7 @@ export class View {
     }
     ctx.fillStyle = 'rgba(255,255,255,0.25)';
     ctx.beginPath(); ctx.ellipse(-2.5 * dir, -13.5, 3, 1.1, -0.3 * dir, 0, 7); ctx.fill();
+    ctx.restore();
     ctx.restore();
   }
 
@@ -576,26 +586,31 @@ export class View {
     const cx = f.rx, cy = f.ry - 8;
     // Rohr
     ctx.strokeStyle = '#2d3240';
-    ctx.lineWidth = 2.6;
+    ctx.lineWidth = 3.2;
     ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(cx + dx * 3, cy + dy * 3); ctx.lineTo(cx + dx * 11, cy + dy * 11); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + dx * 4, cy + dy * 4); ctx.lineTo(cx + dx * 14, cy + dy * 14); ctx.stroke();
     ctx.lineCap = 'butt';
     // Fadenkreuz
-    const R = 44;
+    const R = 60;
     const ax = cx + dx * R, ay = cy + dy * R;
     ctx.strokeStyle = this.teams[f.team].color;
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(ax, ay, 5, 0, 7); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(ax - 8, ay); ctx.lineTo(ax - 3, ay); ctx.moveTo(ax + 3, ay); ctx.lineTo(ax + 8, ay);
-    ctx.moveTo(ax, ay - 8); ctx.lineTo(ax, ay - 3); ctx.moveTo(ax, ay + 3); ctx.lineTo(ax, ay + 8); ctx.stroke();
+    ctx.lineCap = 'round';
+    for (const [lw, c] of [[5, 'rgba(20,20,30,0.55)'], [2.6, this.teams[f.team].color]]) {
+      ctx.strokeStyle = c;
+      ctx.lineWidth = lw;
+      ctx.beginPath(); ctx.arc(ax, ay, 7, 0, 7); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ax - 11, ay); ctx.lineTo(ax - 4, ay); ctx.moveTo(ax + 4, ay); ctx.lineTo(ax + 11, ay);
+      ctx.moveTo(ax, ay - 11); ctx.lineTo(ax, ay - 4); ctx.moveTo(ax, ay + 4); ctx.lineTo(ax, ay + 11); ctx.stroke();
+    }
+    ctx.lineCap = 'butt';
     // Stärke
     if (chg > 0 && w && w.charge) {
       const n = Math.ceil(chg / 6);
       for (let i = 0; i < n; i++) {
         const t = (i + 1) / 17;
-        const r = 12 + t * 40;
+        const r = 15 + t * 52;
         ctx.fillStyle = `hsl(${60 - t * 60}, 95%, 55%)`;
-        ctx.beginPath(); ctx.arc(cx + dx * r, cy + dy * r, 1.5 + t * 3, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + dx * r, cy + dy * r, 1.8 + t * 3.6, 0, 7); ctx.fill();
       }
     }
   }
@@ -607,7 +622,7 @@ export class View {
     for (const f of this.figs.values()) {
       if (!f.alive) continue;
       const team = this.teams[f.team];
-      const [X, Y] = toS(f.rx, f.ry - 21);
+      const [X, Y] = toS(f.rx, f.ry - 26);
       if (X < -50 || X > this.vw + 50 || Y < -40 || Y > this.vh + 40) continue;
       const hp = Math.round(f.shownHp);
       ctx.font = '600 11px system-ui, sans-serif';

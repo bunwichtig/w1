@@ -342,7 +342,7 @@ export function findSpawns(t, n, rnd) {
   const spots = [];
   let minDist = 80;
   const free = (x, y) => {
-    for (let yy = y - 16; yy < y; yy++) for (let xx = x - 6; xx <= x + 6; xx++) if (t.solid(xx, yy)) return false;
+    for (let yy = y - 20; yy < y; yy++) for (let xx = x - 6; xx <= x + 6; xx++) if (t.solid(xx, yy)) return false;
     return true;
   };
   for (let attempt = 0; attempt < 600 && spots.length < n; attempt++) {
