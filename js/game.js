@@ -349,7 +349,7 @@ export class Game {
   figureAt(x, y, exclude) {
     for (const f of this.figures) {
       if (!f.alive || f.id === exclude) continue;
-      if (Math.abs(x - f.x) <= 5 && y >= f.y - 13 && y <= f.y + 1) return f;
+      if (Math.abs(x - f.x) <= 6 && y >= f.y - 15 && y <= f.y + 1) return f;
     }
     return null;
   }

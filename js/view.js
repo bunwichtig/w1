@@ -267,6 +267,9 @@ export class View {
 
   updateCamera(dt) {
     const z = this.zoom, vw = this.vw / z, vh = this.vh / z;
+    // Sobald sich die aktive Figur bewegt, kehrt die Kamera zu ihr zurück.
+    const af = this.figs.get(this.act);
+    if (af && af.alive && (af.st === 1 || (af.st === 2 && this.ph !== 'settle'))) this.manual = false;
     let target = null;
     for (const p of this.projs.values()) target = p;
     if (!target) target = this.figs.get(this.act);
@@ -387,39 +390,62 @@ export class View {
     wave(th.water, 4, 4, -1.2);
   }
 
+  // Figur: kleiner Pilz. Hut in Teamfarbe mit hellen Tupfen, Stiel mit Gesicht.
   drawFig(ctx, f, local) {
     const team = this.teams[f.team];
     const x = f.rx, y = f.ry, dir = f.dir;
     const col = team.color;
-    const step = f.st === 1 ? Math.sin(f.walkT) * 1.6 : 0;
-    const bob = f.st === 1 ? Math.abs(Math.sin(f.walkT)) * -1 : Math.sin(this.time * 2 + f.id) * 0.3;
-    // Füße
-    ctx.fillStyle = shade(col, 0.55);
-    ctx.beginPath(); ctx.ellipse(x - 3 + step, y - 1, 2.6, 1.6, 0, 0, 7); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(x + 3 - step, y - 1, 2.6, 1.6, 0, 0, 7); ctx.fill();
-    // Körper
-    const by = y - 7.5 + bob;
+    const walking = f.st === 1;
+    const step = walking ? Math.sin(f.walkT) * 1.5 : 0;
+    const bob = walking ? -Math.abs(Math.sin(f.walkT)) : Math.sin(this.time * 2 + f.id) * 0.3;
+    const tilt = walking ? Math.sin(f.walkT) * 0.06 : f.st === 2 ? dir * 0.12 : 0;
+    // Füßchen
+    ctx.fillStyle = '#d9c7a4';
+    ctx.beginPath(); ctx.ellipse(x - 2.6 + step, y - 1, 2.3, 1.4, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x + 2.6 - step, y - 1, 2.3, 1.4, 0, 0, 7); ctx.fill();
+    ctx.save();
+    ctx.translate(x, y - 1 + bob);
+    ctx.rotate(tilt);
+    // Stiel
+    ctx.fillStyle = '#f3e6cc';
+    ctx.strokeStyle = '#b39f7c';
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(-4, 0);
+    ctx.quadraticCurveTo(-5, -4.5, -3.4, -8.5);
+    ctx.lineTo(3.4, -8.5);
+    ctx.quadraticCurveTo(5, -4.5, 4, 0);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // Gesicht
+    let look = 0;
+    if (f.id === this.act && this.ph === 'aim') look = -((local ? local.ang : this.aim[0]) / 90) * 0.9;
+    for (const ex of [-0.4, 2.4]) {
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(dir * ex, -5, 1.55, 0, 7); ctx.fill();
+      ctx.fillStyle = '#1b1b24';
+      ctx.beginPath(); ctx.arc(dir * (ex + 0.6), -5 + look, 0.8, 0, 7); ctx.fill();
+    }
+    ctx.strokeStyle = '#8a5a44';
+    ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.arc(dir * 1.1, -3, 1, 0.2, Math.PI - 0.2); ctx.stroke();
+    // Hut
     ctx.fillStyle = col;
     ctx.strokeStyle = shade(col, 0.45);
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.ellipse(x, by, 6.2, 7, 0, 0, 7); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
-    ctx.beginPath(); ctx.ellipse(x + dir * 1.6, by + 2, 3.4, 3.8, 0, 0, 7); ctx.fill();
-    // Spross auf dem Kopf
-    ctx.strokeStyle = shade(col, 0.5);
-    ctx.lineWidth = 1.2;
-    ctx.beginPath(); ctx.moveTo(x - dir, by - 6.5); ctx.quadraticCurveTo(x - dir * 2, by - 10, x - dir * 4.5, by - 10.5); ctx.stroke();
-    ctx.fillStyle = '#7ad45a';
-    ctx.beginPath(); ctx.ellipse(x - dir * 4.8, by - 10.6, 2, 1.2, dir * 0.5, 0, 7); ctx.fill();
-    // Augen
-    let look = 0;
-    if (f.id === this.act && this.ph === 'aim') look = -((local ? local.ang : this.aim[0]) / 90) * 1.2;
-    for (const ex of [0.6, 3.6]) {
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(x + dir * ex, by - 2.8, 1.9, 0, 7); ctx.fill();
-      ctx.fillStyle = '#1b1b24';
-      ctx.beginPath(); ctx.arc(x + dir * (ex + 0.7), by - 2.8 + look, 0.95, 0, 7); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-8, -8);
+    ctx.bezierCurveTo(-8.5, -17, 8.5, -17, 8, -8);
+    ctx.quadraticCurveTo(0, -6, -8, -8);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    for (const [dx, dy, r] of [[-4, -11, 1.6], [1, -13.4, 1.4], [4.6, -10.4, 1.2], [-0.8, -9.6, 0.9]]) {
+      ctx.beginPath(); ctx.arc(dx * dir, dy, r, 0, 7); ctx.fill();
     }
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.beginPath(); ctx.ellipse(-2.5 * dir, -13.5, 3, 1.1, -0.3 * dir, 0, 7); ctx.fill();
+    ctx.restore();
   }
 
   drawGrave(ctx, f) {
@@ -581,7 +607,7 @@ export class View {
     for (const f of this.figs.values()) {
       if (!f.alive) continue;
       const team = this.teams[f.team];
-      const [X, Y] = toS(f.rx, f.ry - 18);
+      const [X, Y] = toS(f.rx, f.ry - 21);
       if (X < -50 || X > this.vw + 50 || Y < -40 || Y > this.vh + 40) continue;
       const hp = Math.round(f.shownHp);
       ctx.font = '600 11px system-ui, sans-serif';

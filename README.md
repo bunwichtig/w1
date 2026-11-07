@@ -1,6 +1,6 @@
 # Krater (Arbeitstitel)
 
-Eigenes, rundenbasiertes Artillerie-Spiel für den Browser. 2 bis 4 Teams, zerstörbares Gelände mit Höhlen, Wind, fünf Waffen. Online-Multiplayer ohne eigenen Server (PeerJS, ein Browser ist Gastgeber) oder alle zusammen an einem Gerät.
+Eigenes, rundenbasiertes Artillerie-Spiel für den Browser. 2 bis 4 Teams kleiner Pilze, zerstörbares Gelände mit Höhlen, Wind, fünf Waffen. Online-Multiplayer ohne eigenen Server (PeerJS, ein Browser ist Gastgeber) oder alle zusammen an einem Gerät.
 
 ## Spielen
 
@@ -20,6 +20,7 @@ Jede Partie bekommt eine neu erzeugte Karte (Höhlen, Hügel oder Inseln). Mit e
 | Enter | springen |
 | 1–5 | Waffe wählen |
 | F | Zünderzeit (Knallei) |
+| T | Chat öffnen (Esc schließt) |
 | Maus ziehen, Mausrad, + − | Kamera bewegen und zoomen |
 | M | Ton an/aus |
 

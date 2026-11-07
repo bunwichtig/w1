@@ -31,7 +31,7 @@
         <ul>
           <li><b>← →</b> laufen, <b>↑ ↓</b> zielen</li>
           <li><b>Leertaste</b> halten lädt die Stärke, loslassen schießt</li>
-          <li><b>Enter</b> springen, <b>1–5</b> Waffe, <b>F</b> Zünderzeit</li>
+          <li><b>Enter</b> springen, <b>1–5</b> Waffe, <b>F</b> Zünderzeit, <b>T</b> Chat</li>
           <li>Maus ziehen bewegt die Kamera, Mausrad oder <b>+ −</b> zoomt</li>
         </ul>
       </details>
@@ -50,7 +50,13 @@
       <h3>Teams</h3>
       <ul id="team-list"></ul>
       <button id="btn-add-team" class="ghost">+ Team an diesem Gerät</button>
-      <h3>Einstellungen</h3>
+      <div class="chat" id="lobby-chat">
+        <h3>💬 Chat <label class="popups"><input type="checkbox" class="chat-popups"> Popups im Spiel</label></h3>
+        <ul class="chat-log"></ul>
+        <form class="chat-form"><input class="chat-input" maxlength="120" autocomplete="off" placeholder="Nachricht …" aria-label="Chat-Nachricht"><button>Senden</button></form>
+      </div>
+      <details id="settings-box" class="settings">
+        <summary><h3>Einstellungen</h3><span id="settings-sum" class="muted"></span></summary>
       <div class="grid">
         <label>Kartengröße
           <select id="set-size"><option value="klein">klein</option><option value="mittel">mittel</option><option value="gross">groß</option></select>
@@ -67,6 +73,7 @@
         <label>Thema <select id="set-theme"></select></label>
         <label>Saat <input id="set-seed" inputmode="numeric" placeholder="zufällig" maxlength="10"></label>
       </div>
+      </details>
       <p id="lobby-hint" class="hint"></p>
       <div class="row">
         <button id="btn-start" class="primary">Spiel starten</button>
@@ -83,6 +90,7 @@
       <div id="hud-wind" title="Wind"><span>Wind</span><div class="wbar"><div id="wind-l"></div><div id="wind-r"></div></div></div>
     </div>
     <div id="hud-corner">
+      <button id="btn-chat" class="icon" title="Chat (T)">💬<span id="chat-badge" class="chat-badge" hidden>0</span></button>
       <button id="btn-mute" class="icon" title="Ton an/aus (M)">🔊</button>
       <button id="btn-exit" class="icon" title="Spiel verlassen">✕</button>
     </div>
@@ -99,6 +107,11 @@
         <button data-k="J" aria-label="Springen">⤒</button>
         <button data-k="F" class="fire" aria-label="Feuer (halten)">Feuer</button>
       </div>
+    </div>
+    <div id="game-chat" class="chat" hidden>
+      <div class="chat-head"><b>💬 Chat</b><label class="popups"><input type="checkbox" class="chat-popups"> Popups</label><button id="chat-close" class="small ghost" title="Schließen (Esc)">✕</button></div>
+      <ul class="chat-log"></ul>
+      <form class="chat-form"><input class="chat-input" maxlength="120" autocomplete="off" placeholder="Nachricht …" aria-label="Chat-Nachricht"><button>Senden</button></form>
     </div>
     <div id="toasts" aria-live="polite"></div>
     <div id="over" hidden>

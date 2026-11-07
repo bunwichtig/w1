@@ -67,6 +67,7 @@ const sfx = {
       else if (kind === 'shot') { this.noise(0.18, 'bandpass', 900, 0.35, 0.8); this.tone(500, 180, 0.15, 0.12, 'triangle'); }
       else if (kind === 'bang') this.noise(0.22, 'highpass', 1200, 0.6);
       else if (kind === 'splash') this.noise(0.5, 'bandpass', 600, 0.4, 0.6);
+      else if (kind === 'chat') this.tone(990, 1320, 0.08, 0.05);
       else if (kind === 'turn') { this.tone(660, 660, 0.09, 0.08); setTimeout(() => this.ctx && this.tone(880, 880, 0.12, 0.08), 110); }
     } catch { /* egal */ }
   },
@@ -79,10 +80,10 @@ function show(id) {
   for (const s of document.querySelectorAll('.screen')) s.hidden = s.id !== id;
 }
 
-function toast(text, color) {
+function toast(text, color, cls) {
   const box = $('toasts');
   const el = document.createElement('div');
-  el.className = 'toast';
+  el.className = 'toast' + (cls ? ' ' + cls : '');
   el.textContent = text;
   if (color) el.style.borderLeftColor = color;
   box.appendChild(el);
@@ -107,6 +108,11 @@ function backToMenu(msg) {
   lobby = null;
   view.loaded = false;
   $('over').hidden = true;
+  chatMsgs.length = 0;
+  chatUnread = 0;
+  settingsInit = false;
+  $('game-chat').hidden = true;
+  renderChat();
   show('menu');
   busy(false);
   menuError(msg);
@@ -138,6 +144,8 @@ const ui = {
       case 'ev': onEvents(m.e); break;
       case 'state': view.applyState(m); break;
       case 'toast': toast(m.text); break;
+      case 'chat': addChat(m, true); break;
+      case 'chatlog': chatMsgs.length = 0; for (const c of m.list) addChat(c, false); break;
       case 'over': showOver(m); break;
     }
   },
@@ -268,6 +276,11 @@ function renderLobby() {
     el.disabled = !isHost;
     if (document.activeElement !== el) el.value = String(m.settings[k]);
   }
+  const st = m.settings;
+  const sizeName = { klein: 'klein', mittel: 'mittel', gross: 'groß' }[st.size];
+  const modeName = { hoehlen: 'Höhlen', huegel: 'Hügel', inseln: 'Inseln' }[st.mode];
+  $('settings-sum').textContent = `${sizeName} · ${modeName} · ${st.perTeam} ${st.perTeam == 1 ? 'Figur' : 'Figuren'} · ${st.turnTime} s`;
+  if (!settingsInit) { settingsInit = true; $('settings-box').open = isHost && store.get('settings-open') !== '0'; }
   $('btn-add-team').hidden = !isHost || m.teams.length >= MAX_TEAMS;
   $('btn-start').hidden = !isHost;
   $('btn-start').disabled = m.teams.length < 2;
@@ -278,6 +291,8 @@ function renderLobby() {
     : 'Warte, bis der Gastgeber das Spiel startet.';
 }
 
+let settingsInit = false;
+$('settings-box').addEventListener('toggle', () => { if (isHost) store.set('settings-open', $('settings-box').open ? '1' : '0'); });
 for (const [k, id] of Object.entries(SETTING_IDS)) {
   $(id).onchange = () => { if (isHost && session) session.setSettings({ [k]: $(id).value }); };
 }
@@ -297,6 +312,90 @@ $('btn-exit').onclick = () => { if (confirm(isHost && lobby && lobby.room ? 'Spi
 $('btn-mute').onclick = () => { sfx.muted = !sfx.muted; store.set('mute', sfx.muted ? '1' : '0'); updateMute(); };
 function updateMute() { $('btn-mute').textContent = sfx.muted ? '🔇' : '🔊'; }
 updateMute();
+
+// --- Chat ---------------------------------------------------------------------------
+const chatMsgs = [];
+let chatUnread = 0;
+let chatPopups = store.get('chatpop') !== '0';
+
+function addChat(m, live) {
+  chatMsgs.push(m);
+  if (chatMsgs.length > 60) chatMsgs.shift();
+  renderChat();
+  if (!live) return;
+  const open = !$('game-chat').hidden;
+  if (started && !open) {
+    chatUnread++;
+    if (chatPopups && m.id !== myId) toast(`${m.name}: ${m.text}`, m.color, 'chat-toast');
+  }
+  updateBadge();
+  if (m.id !== myId) sfx.play('chat');
+}
+
+function renderChat() {
+  for (const log of document.querySelectorAll('.chat-log')) {
+    const items = chatMsgs.map((m) => {
+      const li = document.createElement('li');
+      if (m.id === myId) li.className = 'mine';
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.background = m.color;
+      const b = document.createElement('b');
+      b.textContent = m.name;
+      li.append(dot, b, document.createTextNode(m.text));
+      return li;
+    });
+    if (!items.length) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'Noch keine Nachrichten.';
+      items.push(li);
+    }
+    log.replaceChildren(...items);
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
+function updateBadge() {
+  $('chat-badge').hidden = !chatUnread;
+  $('chat-badge').textContent = chatUnread > 9 ? '9+' : String(chatUnread);
+}
+
+function openChat(open) {
+  $('game-chat').hidden = !open;
+  if (open) {
+    chatUnread = 0;
+    updateBadge();
+    renderChat();
+    $('game-chat').querySelector('.chat-input').focus();
+    keys.clear();
+    releaseCharge();
+  }
+}
+
+for (const form of document.querySelectorAll('.chat-form')) {
+  const inp = form.querySelector('.chat-input');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = inp.value.trim();
+    if (text && session) session.sendChat(text);
+    inp.value = '';
+  });
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && form.closest('#game-chat')) { inp.blur(); openChat(false); }
+  });
+}
+for (const cb of document.querySelectorAll('.chat-popups')) {
+  cb.checked = chatPopups;
+  cb.onchange = () => {
+    chatPopups = cb.checked;
+    store.set('chatpop', chatPopups ? '1' : '0');
+    for (const o of document.querySelectorAll('.chat-popups')) o.checked = chatPopups;
+  };
+}
+$('btn-chat').onclick = () => openChat($('game-chat').hidden);
+$('chat-close').onclick = () => openChat(false);
+renderChat();
 
 // --- Eingabe ----------------------------------------------------------------------
 const input = { dx: 0, jump: 0, ang: 30, weapon: 0, fire: 0, pow: 0, fuse: 3, chg: 0 };
@@ -338,6 +437,7 @@ function fire(p) {
 }
 function jump() {
   if (!myTurn()) return;
+  view.manual = false;
   input.jump++;
   sendInput();
 }
@@ -357,6 +457,7 @@ addEventListener('keydown', (e) => {
   else if (/^Digit[1-9]$/.test(e.code)) selectWeapon(+e.code.slice(5) - 1);
   else if (e.code === 'KeyF') input.fuse = (input.fuse % 5) + 1;
   else if (e.code === 'KeyM') $('btn-mute').click();
+  else if (e.code === 'KeyT') { e.preventDefault(); openChat(true); }
   else if (e.code === 'Equal' || e.code === 'NumpadAdd') view.zoomMul = Math.min(2.5, view.zoomMul * 1.15);
   else if (e.code === 'Minus' || e.code === 'NumpadSubtract') view.zoomMul = Math.max(0.6, view.zoomMul / 1.15);
 });
@@ -414,6 +515,21 @@ function setHtml(id, html) {
   $(id).innerHTML = html;
 }
 
+// Eigene Symbole für die Waffen (viewBox 32×32)
+const svg = (body) => `<svg viewBox="0 0 32 32" aria-hidden="true">${body}</svg>`;
+const WEAPON_ICONS = [
+  // Rakete: schräg nach oben, mit Flamme
+  svg('<g transform="rotate(-35 16 16)"><path d="M7 16 L21 12.2 Q29 16 21 19.8 Z" fill="#d5dbe8" stroke="#3b4250" stroke-width=".8"/><path d="M21 12.2 Q29 16 21 19.8 Z" fill="#e8504a"/><path d="M9 15 L5 10.5 L11.5 13.4Z M9 17 L5 21.5 L11.5 18.6Z" fill="#e8504a"/><circle cx="4.6" cy="16" r="2.6" fill="#f2b33d"/><circle cx="2.6" cy="16" r="1.4" fill="#fff6a0"/></g>'),
+  // Knallei: Ei mit Punkten und brennender Lunte
+  svg('<ellipse cx="15" cy="19.5" rx="8" ry="10" fill="#f4ecd6" stroke="#8a7a5a"/><circle cx="12" cy="17" r="1.7" fill="#e8504a"/><circle cx="18" cy="22.5" r="1.5" fill="#e8504a"/><circle cx="13.5" cy="24.5" r="1.1" fill="#e8504a"/><path d="M15 9.5 q2 -4 6 -4" stroke="#6b6b6b" stroke-width="1.4" fill="none"/><circle cx="22.5" cy="5.2" r="2.4" fill="#f2b33d"/><circle cx="22.5" cy="5.2" r="1.1" fill="#fff6a0"/>'),
+  // Streukürbis: Kürbis, aus dem Kerne fliegen
+  svg('<ellipse cx="13" cy="20" rx="9.5" ry="8" fill="#f08a24" stroke="#a3520c"/><path d="M13 12.2v15.6 M8 13.5q-2.5 6.5 0 13 M18 13.5q2.5 6.5 0 13" stroke="#a3520c" fill="none" stroke-width=".9"/><rect x="11.8" y="8" width="2.6" height="4.4" rx="1" fill="#4c8a2a"/><ellipse cx="25" cy="10" rx="2.2" ry="1.6" fill="#ffd36a"/><ellipse cx="28" cy="16.5" rx="2.2" ry="1.6" fill="#ffd36a"/><ellipse cx="22" cy="4.5" rx="2.2" ry="1.6" fill="#ffd36a"/>'),
+  // Schrotflinte: Doppellauf mit drei Schrotspuren
+  svg('<rect x="3" y="12" width="17" height="3.2" rx="1.2" fill="#a8b0c2" stroke="#4a5060" stroke-width=".7"/><rect x="3" y="16" width="17" height="3.2" rx="1.2" fill="#a8b0c2" stroke="#4a5060" stroke-width=".7"/><path d="M3 19.5 L1.5 26 H7 L9.5 19.5Z" fill="#8b5a2b"/><path d="M23 11.5h5 M23.5 16.6h6.5 M23 21.7h5" stroke="#ffe08a" stroke-width="2.2" stroke-linecap="round"/>'),
+  // Sprengfass: rotes Fass mit Funken
+  svg('<rect x="7.5" y="10" width="15" height="19" rx="3.2" fill="#c0392b" stroke="#6e1f17"/><rect x="7.5" y="14" width="15" height="2.6" fill="#f2b33d"/><rect x="7.5" y="23" width="15" height="2.6" fill="#f2b33d"/><path d="M15 10 q.5 -4 5 -5.5" stroke="#6b6b6b" stroke-width="1.4" fill="none"/><path d="M22 0.8 l1.3 2.9 3.1 .3 -2.4 2.1 .7 3.1 -2.7 -1.6 -2.7 1.6 .7 -3.1 -2.4 -2.1 3.1 -.3z" fill="#ffd36a"/>'),
+];
+
 const PHASE_TEXT = { shot: 'Schuss!', retreat: 'Rückzug!', settle: '…', pause: 'Warte auf Spieler …', next: '', over: 'Spielende' };
 
 function updateHud(mine) {
@@ -445,7 +561,7 @@ function updateHud(mine) {
     const wsel = WEAPONS[input.weapon];
     setHtml('hud-weapons', '<div class="wlist">' + WEAPONS.map((w, i) => {
       const a = ammo(i);
-      return `<button class="wbtn${i === input.weapon ? ' sel' : ''}" data-w="${i}" ${a === 0 ? 'disabled' : ''}><span class="wkey">${w.key}</span>${esc(w.name)}<span class="wammo">${a < 0 ? '∞' : a}</span></button>`;
+      return `<button class="wbtn${i === input.weapon ? ' sel' : ''}" data-w="${i}" ${a === 0 ? 'disabled' : ''} title="${esc(w.name)} (${w.key})" aria-label="${esc(w.name)}"><span class="wkey">${w.key}</span>${WEAPON_ICONS[i]}<span class="wammo">${a < 0 ? '∞' : a}</span></button>`;
     }).join('') + `</div><div class="winfo"><span>${esc(wsel.info)}</span>${wsel.fuse ? ` <button class="fuse" data-fuse>Zünder: ${input.fuse} s</button>` : ''}</div>`);
   }
 }
@@ -467,6 +583,7 @@ function loop(now) {
     wasMine = mine;
     if (mine) {
       input.dx = (keys.has('R') ? 1 : 0) - (keys.has('L') ? 1 : 0);
+      if (input.dx) view.manual = false;
       if (view.ph === 'aim') {
         if (keys.has('U')) angF = Math.min(90, angF + 70 * dt);
         if (keys.has('D')) angF = Math.max(-90, angF - 70 * dt);

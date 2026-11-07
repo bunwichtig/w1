@@ -41,6 +41,7 @@ export class Host {
     this.players.set(0, { id: 0, name, conn: null, tok: '', absent: false, inp: { fire: 0, jump: 0 } });
     this.teams = [{ name, color: TEAM_COLORS[0], owner: 0 }];
     this.settings = { ...DEFAULT_SETTINGS };
+    this.chatLog = [];
     this.game = null;
     this.theme = 0;
     this.server = null;
@@ -91,6 +92,7 @@ export class Host {
           p.lastSeen = performance.now();
           p.inp = { fire: 0, jump: 0 };
           conn.send({ t: 'welcome', id: p.id, tok: p.tok });
+          if (this.chatLog.length) conn.send({ t: 'chatlog', list: this.chatLog });
           if (this.game) {
             this.teams.forEach((t, i) => { if (t.owner === p.id) this.game.setAbsent(i, false); });
             conn.send(this.syncMsg());
@@ -111,6 +113,7 @@ export class Host {
     this.players.set(p.id, p);
     this.teams.push({ name: p.name, color: this.freeColor(), owner: p.id });
     conn.send({ t: 'welcome', id: p.id, tok: p.tok });
+    if (this.chatLog.length) conn.send({ t: 'chatlog', list: this.chatLog });
     this.broadcastLobby();
     this.toast(`${p.name} ist beigetreten.`);
     return p;
@@ -134,9 +137,28 @@ export class Host {
     switch (m.t) {
       case 'input': if (this.game) this.applyInput(p, m); break;
       case 'resync': if (this.game) p.conn.send(this.syncMsg()); break;
+      case 'chat': this.chat(p.id, m.text); break;
       case 'ping': break;
     }
   }
+
+  /** Chat: Gastgeber prüft, kürzt und verteilt. Höchstens eine Nachricht pro 0,6 s und Spieler. */
+  chat(pid, text) {
+    const p = this.players.get(pid);
+    if (!p) return;
+    const now = performance.now();
+    if (p.lastChat && now - p.lastChat < 600) return;
+    const t = String(text ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 120);
+    if (!t) return;
+    p.lastChat = now;
+    const team = this.teams.find((x) => x.owner === pid);
+    const msg = { t: 'chat', id: pid, name: p.name, color: team ? team.color : '#9aa0b4', text: t };
+    this.chatLog.push(msg);
+    if (this.chatLog.length > 40) this.chatLog.shift();
+    this.broadcast(msg);
+  }
+
+  sendChat(text) { this.chat(0, text); }
 
   freeColor() {
     return TEAM_COLORS.find((c) => !this.teams.some((t) => t.color === c)) || TEAM_COLORS[0];
@@ -362,6 +384,8 @@ export class Client {
   }
 
   resync() { this.send({ t: 'resync' }); }
+
+  sendChat(text) { this.send({ t: 'chat', text: String(text).slice(0, 120) }); }
 
   close() {
     this.left = true;
