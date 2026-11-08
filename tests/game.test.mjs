@@ -62,3 +62,15 @@ test('Komplette Partie mit zufälligen Schüssen endet', () => {
     }
   }
 });
+
+test('Vorschläge für Name, Raum und Passwort', async () => {
+  const { NAMES, ROOMS, randomName, randomRoom, randomPassword } = await import('../js/defaults.js');
+  const { slug } = await import('../js/net.js');
+  assert.equal(new Set(NAMES).size, 100);
+  assert.equal(new Set(ROOMS).size, 100);
+  for (const n of NAMES) assert.ok(n.length <= 16, n);
+  for (const r of ROOMS) assert.ok(r.length <= 32 && slug(r), r);
+  assert.ok(NAMES.includes(randomName()));
+  assert.ok(ROOMS.includes(randomRoom()));
+  for (let i = 0; i < 50; i++) assert.match(randomPassword(), /^\d{3}\.[a-z]{3}$/);
+});

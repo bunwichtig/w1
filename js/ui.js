@@ -3,6 +3,7 @@ import { Host, Client, cleanName, MAX_TEAMS } from './session.js';
 import { View, THEMES } from './view.js';
 import { WEAPONS } from './game.js';
 import { slug, hashPw } from './net.js';
+import { randomName, randomRoom, randomPassword } from './defaults.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -233,9 +234,14 @@ async function doJoin() {
 $('btn-host').onclick = () => doHost(false);
 $('btn-join').onclick = () => doJoin();
 $('btn-hotseat').onclick = () => doHost(true);
-$('in-name').value = store.get('name') || '';
+// Vorschläge eintragen: gespeicherter Name oder ein zufälliger, dazu Beispielraum und Passwort.
+// Wer über einen Einladungslink kommt, bekommt den Raum aus dem Link und ein leeres Passwortfeld.
+$('in-name').value = store.get('name') || randomName();
+$('in-room').value = randomRoom();
+$('in-pw').value = randomPassword();
 if (params.get('room')) {
   $('in-room').value = params.get('room');
+  $('in-pw').value = '';
   $('btn-join').classList.add('primary');
   $('btn-host').classList.remove('primary');
 }
