@@ -335,7 +335,7 @@ export class Client {
     this.left = false;
   }
 
-  tokKey() { return 'krater-tok-' + (this.local ? 'l-' : '') + this.room; }
+  tokKey() { return 'wuermer-tok-' + (this.local ? 'l-' : '') + this.room; }
 
   async open() {
     this.conn = await joinRoom(this.room, this.local);
