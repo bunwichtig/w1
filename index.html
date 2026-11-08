@@ -17,7 +17,8 @@
       <p class="sub">Rundenbasiertes Artillerie-Spiel für 2 bis 4 Teams. Online mit Freunden oder an einem Gerät.</p>
       <label>Dein Name <input id="in-name" maxlength="16" autocomplete="nickname" placeholder="Spieler"></label>
       <label>Raum <input id="in-room" maxlength="32" autocomplete="off" placeholder="z. B. freitagsrunde"></label>
-      <label>Passwort (optional) <input id="in-pw" type="password" autocomplete="off"></label>
+      <label>Passwort (optional) <input id="in-pw" type="text" autocomplete="off" spellcheck="false"></label>
+      <button id="btn-random" type="button" class="ghost small dice-btn" title="Neuen Namen, Raum und Passwort würfeln">🎲 Zufällig</button>
       <div class="row">
         <button id="btn-host" class="primary">Raum erstellen</button>
         <button id="btn-join">Beitreten</button>

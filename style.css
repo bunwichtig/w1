@@ -40,6 +40,7 @@ button:disabled { opacity: .45; cursor: default; }
 button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; font-weight: 650; }
 button.ghost { background: transparent; }
 button.small { padding: 3px 8px; font-size: 13px; }
+.dice-btn { display: block; margin: -4px 0 0 auto; }
 .wide-btn { width: 100%; margin-top: 8px; }
 .row { display: flex; gap: 8px; margin-top: 12px; }
 .row > button { flex: 1; }
