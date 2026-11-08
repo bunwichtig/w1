@@ -189,6 +189,7 @@ async function doHost(hotseat) {
   menuError('');
   const name = cleanName($('in-name').value, 'Spieler');
   store.set('name', name);
+  if (!hotseat) remember();
   let room = null;
   if (!hotseat) {
     room = slug($('in-room').value);
@@ -214,6 +215,7 @@ async function doJoin() {
   menuError('');
   const name = cleanName($('in-name').value, 'Spieler');
   store.set('name', name);
+  remember();
   const room = slug($('in-room').value);
   if (!room) return menuError('Bitte den Raumnamen eingeben, den dir der Gastgeber genannt hat.');
   sfx.ensure();
@@ -234,11 +236,20 @@ async function doJoin() {
 $('btn-host').onclick = () => doHost(false);
 $('btn-join').onclick = () => doJoin();
 $('btn-hotseat').onclick = () => doHost(true);
-// Vorschläge eintragen: gespeicherter Name oder ein zufälliger, dazu Beispielraum und Passwort.
+// Zuletzt benutzte Werte wieder eintragen, sonst (beim ersten Besuch) Zufallsvorschläge.
 // Wer über einen Einladungslink kommt, bekommt den Raum aus dem Link und ein leeres Passwortfeld.
+function remember() {
+  store.set('room', $('in-room').value.trim());
+  store.set('pw', $('in-pw').value);
+}
 $('in-name').value = store.get('name') || randomName();
-$('in-room').value = randomRoom();
-$('in-pw').value = randomPassword();
+$('in-room').value = store.get('room') || randomRoom();
+$('in-pw').value = store.get('pw') ?? randomPassword();
+$('btn-random').onclick = () => {
+  $('in-name').value = randomName();
+  $('in-room').value = randomRoom();
+  $('in-pw').value = randomPassword();
+};
 if (params.get('room')) {
   $('in-room').value = params.get('room');
   $('in-pw').value = '';
