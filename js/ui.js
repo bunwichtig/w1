@@ -11,8 +11,8 @@ const LOCAL = params.has('local');
 const DESYNC_TEST = params.has('desync');
 
 const store = {
-  get(k) { try { return localStorage.getItem('krater-' + k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem('krater-' + k, v); } catch { /* privat */ } },
+  get(k) { try { return localStorage.getItem('wuermer-' + k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem('wuermer-' + k, v); } catch { /* privat */ } },
 };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -25,7 +25,7 @@ let lastSeq = 0;
 let waitingSync = false;
 let desyncDone = false;
 const view = new View($('cv'));
-if (params.has('debug')) window.krater = { view, get session() { return session; } };
+if (params.has('debug')) window.spiel = { view, get session() { return session; } };
 
 // --- Töne (selbst erzeugt mit WebAudio) ---------------------------------------
 const sfx = {
@@ -260,7 +260,7 @@ $('local-hint').hidden = !LOCAL;
 // Nach einem Neuladen mitten im Spiel automatisch wieder beitreten
 try {
   const r = slug(params.get('room') || '');
-  if (r && sessionStorage.getItem('krater-tok-' + (LOCAL ? 'l-' : '') + r)) setTimeout(() => doJoin(), 0);
+  if (r && sessionStorage.getItem('wuermer-tok-' + (LOCAL ? 'l-' : '') + r)) setTimeout(() => doJoin(), 0);
 } catch { /* privat */ }
 fetch('version.txt', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : 'dev')).then((v) => { $('version').textContent = v.trim().slice(0, 40); }).catch(() => {});
 
@@ -321,7 +321,7 @@ $('btn-copy').onclick = async () => {
   try { await navigator.clipboard.writeText(link); toast('Link kopiert.'); } catch { $('invite-link').select(); document.execCommand('copy'); toast('Link kopiert.'); }
 };
 $('btn-share').hidden = !navigator.share;
-$('btn-share').onclick = () => navigator.share({ title: 'Krater', text: 'Spiel mit mir Krater!', url: $('invite-link').value }).catch(() => {});
+$('btn-share').onclick = () => navigator.share({ title: 'Würmer töten', text: 'Spiel mit mir Würmer töten!', url: $('invite-link').value }).catch(() => {});
 $('btn-again').onclick = () => session && session.backToLobby && session.backToLobby();
 $('btn-quit').onclick = () => backToMenu('');
 $('btn-exit').onclick = () => { if (confirm(isHost && lobby && lobby.room ? 'Spiel beenden? Alle Mitspieler fliegen dann raus.' : 'Spiel verlassen?')) backToMenu(''); };

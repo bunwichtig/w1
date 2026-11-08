@@ -1,4 +1,4 @@
-# Krater (Arbeitstitel)
+# Würmer töten
 
 Eigenes, rundenbasiertes Artillerie-Spiel für den Browser. 2 bis 4 Teams kleiner Pilze, zerstörbares Gelände mit Höhlen, Wind, fünf Waffen. Online-Multiplayer ohne eigenen Server (PeerJS, ein Browser ist Gastgeber) oder alle zusammen an einem Gerät.
 

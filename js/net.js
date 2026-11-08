@@ -1,8 +1,8 @@
 // net.js – Verbindungen: PeerJS (Internet) oder BroadcastChannel (?local, mehrere Tabs auf einem Rechner).
 // Beide liefern dieselbe Conn-Schnittstelle: send(obj), onMessage, onClose, close(), buffered().
 
-export const PREFIX = 'krater-v1-';
-const LOCAL_PREFIX = 'krater-local-v1-';
+export const PREFIX = 'wuermer-toeten-v1-';
+const LOCAL_PREFIX = 'wuermer-toeten-local-v1-';
 const TIMEOUT = 12000;
 const SERVER_DOWN = 'Keine Verbindung zum Vermittlungs-Server. Bitte Internet prüfen oder es gleich nochmal versuchen.';
 
@@ -18,7 +18,7 @@ export function slug(s) {
 
 export async function hashPw(pw) {
   if (!pw) return '';
-  const data = new TextEncoder().encode('krater:' + pw);
+  const data = new TextEncoder().encode('wuermer-toeten:' + pw);
   try {
     const d = await crypto.subtle.digest('SHA-256', data);
     return Array.from(new Uint8Array(d), (b) => b.toString(16).padStart(2, '0')).join('');
