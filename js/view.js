@@ -28,7 +28,10 @@ function shade(hex, k) {
   return `rgb(${r},${g},${b})`;
 }
 
-const FIG_SCALE = 1.3;
+const FIG_SCALE = 1.6;
+const LABEL_UP = 32;   // Abstand Füße → Namensschild (wächst mit FIG_SCALE)
+const NUM_LIFE = 3.6; // so lange bleibt eine Schadenszahl sichtbar (s)
+const NUM_FADE = 1;   // davon die letzte Sekunde ausblenden
 const OUTLINE = '#22202b';
 
 export class View {
@@ -188,7 +191,11 @@ export class View {
       }
       case 'dmg': {
         const f = this.figs.get(e[2]);
-        if (f) this.fx.push({ k: 'num', x: f.x, y: f.y - 26, t: 0, life: 1.6, text: '-' + e[3], c: team(f).color });
+        if (f) {
+          // mehrere Treffer kurz hintereinander stapeln statt übereinander malen
+          const stack = this.fx.filter((n) => n.k === 'num' && n.fig === f.id && n.t < 0.8).length;
+          this.fx.push({ k: 'num', fig: f.id, x: f.x, y: f.y, dy: -LABEL_UP - 20 - stack * 16, t: 0, life: NUM_LIFE, text: '-' + e[3], c: team(f).color });
+        }
         break;
       }
       case 'die': {
@@ -217,6 +224,7 @@ export class View {
         break;
       }
       case 'timeout': this.onNotice('Zeit abgelaufen!'); break;
+      case 'fallhurt': this.onNotice('Autsch! Zug vorbei.'); break;
       case 'gaveup': { const t = this.teams[e[2]]; if (t) this.onNotice(`${t.name} hat aufgegeben.`, t.color); break; }
     }
     return true;
@@ -393,67 +401,110 @@ export class View {
     wave(th.water, 4, 4, -1.2);
   }
 
-  // Figur: kleiner Pilz. Hut in Teamfarbe mit hellen Tupfen, Stiel mit Gesicht.
+  // Figur: Pilz im Comic-Stil. Hut in Teamfarbe mit Tupfen, Stiel mit großen Augen, dicke dunkle Umrisse.
   drawFig(ctx, f, local) {
     const team = this.teams[f.team];
     const x = f.rx, y = f.ry, dir = f.dir;
     const col = team.color;
     const walking = f.st === 1;
+    const flying = f.st === 2;
     const step = walking ? Math.sin(f.walkT) * 1.5 : 0;
     const bob = walking ? -Math.abs(Math.sin(f.walkT)) : Math.sin(this.time * 2 + f.id) * 0.3;
-    const tilt = walking ? Math.sin(f.walkT) * 0.06 : f.st === 2 ? dir * 0.12 : 0;
-    // etwas größer und mit kräftigen Umrissen, damit es comichaft wirkt
+    const tilt = walking ? Math.sin(f.walkT) * 0.06 : flying ? dir * 0.12 : 0;
+    // leichtes Quetschen und Strecken wie im Zeichentrick
+    const squash = walking ? 1 + Math.abs(Math.sin(f.walkT)) * 0.05 : flying ? 0.94 : 1 + Math.sin(this.time * 2 + f.id) * 0.015;
     ctx.save();
     ctx.translate(x, y); ctx.scale(FIG_SCALE, FIG_SCALE); ctx.translate(-x, -y);
     ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    // Schatten am Boden
+    if (!flying) {
+      ctx.fillStyle = 'rgba(0,0,0,0.22)';
+      ctx.beginPath(); ctx.ellipse(x, y + 0.3, 6.5, 1.4, 0, 0, 7); ctx.fill();
+    }
     // Füßchen
-    ctx.fillStyle = '#d9c7a4';
+    ctx.fillStyle = '#e2cfa8';
     ctx.strokeStyle = OUTLINE;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.ellipse(x - 2.6 + step, y - 1, 2.3, 1.4, 0, 0, 7); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(x + 2.6 - step, y - 1, 2.3, 1.4, 0, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.ellipse(x - 2.8 + step, y - 1, 2.5, 1.5, 0, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x + 2.8 - step, y - 1, 2.5, 1.5, 0, 0, 7); ctx.fill(); ctx.stroke();
     ctx.save();
     ctx.translate(x, y - 1 + bob);
     ctx.rotate(tilt);
+    ctx.scale(1 / Math.sqrt(squash), squash);
     // Stiel
-    ctx.fillStyle = '#f3e6cc';
+    ctx.fillStyle = '#fbf0d9';
     ctx.strokeStyle = OUTLINE;
-    ctx.lineWidth = 1.3;
+    ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.moveTo(-4, 0);
-    ctx.quadraticCurveTo(-5, -4.5, -3.4, -8.5);
-    ctx.lineTo(3.4, -8.5);
-    ctx.quadraticCurveTo(5, -4.5, 4, 0);
+    ctx.moveTo(-4.4, 0);
+    ctx.quadraticCurveTo(-5.6, -4.5, -3.6, -8.5);
+    ctx.lineTo(3.6, -8.5);
+    ctx.quadraticCurveTo(5.6, -4.5, 4.4, 0);
     ctx.closePath();
     ctx.fill(); ctx.stroke();
-    // Gesicht
+    // Schattenseite am Stiel
+    ctx.fillStyle = 'rgba(160,120,80,0.22)';
+    ctx.beginPath();
+    ctx.moveTo(-1.5 * dir, -0.6); ctx.quadraticCurveTo(-4.8 * dir, -1, -4.6 * dir, -4.5);
+    ctx.quadraticCurveTo(-4.4 * dir, -7.5, -3.3 * dir, -8.2); ctx.lineTo(-2 * dir, -8.2);
+    ctx.quadraticCurveTo(-3.6 * dir, -4, -1.5 * dir, -0.6);
+    ctx.fill();
+    // Gesicht: große Comic-Augen mit Glanzpunkt
     let look = 0;
-    if (f.id === this.act && this.ph === 'aim') look = -((local ? local.ang : this.aim[0]) / 90) * 0.9;
-    for (const ex of [-0.4, 2.4]) {
+    if (f.id === this.act && this.ph === 'aim') look = -((local ? local.ang : this.aim[0]) / 90) * 0.8;
+    const hurt = f.hp < 35;
+    for (const ex of [-0.6, 2.3]) {
       ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(dir * ex, -5, 1.55, 0, 7); ctx.fill();
-      ctx.fillStyle = '#1b1b24';
-      ctx.beginPath(); ctx.arc(dir * (ex + 0.6), -5 + look, 0.8, 0, 7); ctx.fill();
+      ctx.strokeStyle = OUTLINE;
+      ctx.lineWidth = 0.7;
+      ctx.beginPath(); ctx.ellipse(dir * ex, -4.7, 1.5, 1.8, 0, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#16151d';
+      ctx.beginPath(); ctx.arc(dir * (ex + 0.55), -4.6 + look, 0.95, 0, 7); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(dir * (ex + 0.85), -5.1 + look, 0.32, 0, 7); ctx.fill();
     }
-    ctx.strokeStyle = '#8a5a44';
-    ctx.lineWidth = 0.7;
-    ctx.beginPath(); ctx.arc(dir * 1.1, -3, 1, 0.2, Math.PI - 0.2); ctx.stroke();
+    // Bäckchen
+    ctx.fillStyle = 'rgba(255,120,120,0.45)';
+    ctx.beginPath(); ctx.ellipse(dir * -2.4, -2.4, 0.9, 0.55, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(dir * 3.7, -2.4, 0.7, 0.5, 0, 0, 7); ctx.fill();
+    // Mund
+    ctx.strokeStyle = '#7a3e2c';
+    ctx.lineWidth = 0.75;
+    ctx.beginPath();
+    if (hurt) ctx.arc(dir * 1, -1.2, 0.9, Math.PI + 0.3, -0.3);
+    else ctx.arc(dir * 1, -2.4, 1.1, 0.2, Math.PI - 0.2);
+    ctx.stroke();
     // Hut
     ctx.fillStyle = col;
     ctx.strokeStyle = OUTLINE;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(-8, -8);
-    ctx.bezierCurveTo(-8.5, -17, 8.5, -17, 8, -8);
-    ctx.quadraticCurveTo(0, -6, -8, -8);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    for (const [dx, dy, r] of [[-4, -11, 1.6], [1, -13.4, 1.4], [4.6, -10.4, 1.2], [-0.8, -9.6, 0.9]]) {
-      ctx.beginPath(); ctx.arc(dx * dir, dy, r, 0, 7); ctx.fill();
+    ctx.lineWidth = 1.8;
+    const hat = () => {
+      ctx.beginPath();
+      ctx.moveTo(-8.6, -8);
+      ctx.bezierCurveTo(-9.2, -18, 9.2, -18, 8.6, -8);
+      ctx.quadraticCurveTo(0, -5.8, -8.6, -8);
+      ctx.closePath();
+    };
+    hat();
+    ctx.fill();
+    // dunklere Unterkante des Huts (Cel-Shading)
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.beginPath(); ctx.ellipse(0, -7.2, 10, 2.4, 0, 0, 7); ctx.fill();
+    ctx.restore();
+    hat();
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(34,32,43,0.35)';
+    ctx.lineWidth = 0.5;
+    for (const [dx, dy, r] of [[-4.3, -11.3, 1.8], [1, -14, 1.6], [5, -10.8, 1.35], [-0.9, -9.9, 1]]) {
+      ctx.beginPath(); ctx.arc(dx * dir, dy, r, 0, 7); ctx.fill(); ctx.stroke();
     }
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    ctx.beginPath(); ctx.ellipse(-2.5 * dir, -13.5, 3, 1.1, -0.3 * dir, 0, 7); ctx.fill();
+    // Glanzlicht
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath(); ctx.ellipse(-3 * dir, -14.6, 2.6, 0.9, -0.35 * dir, 0, 7); ctx.fill();
     ctx.restore();
     ctx.restore();
   }
@@ -566,7 +617,8 @@ export class View {
           break;
         case 'num':
           if (e.t > e.life) continue;
-          e.y -= 22 * dt;
+          if (e.t < 0.9) e.dy -= 26 * dt; // kurz hochsteigen, dann über der Figur stehen bleiben
+          { const f = this.figs.get(e.fig); if (f && f.alive) { e.x = f.rx; e.y = f.ry; } }
           break;
       }
       keep.push(e);
@@ -622,7 +674,7 @@ export class View {
     for (const f of this.figs.values()) {
       if (!f.alive) continue;
       const team = this.teams[f.team];
-      const [X, Y] = toS(f.rx, f.ry - 26);
+      const [X, Y] = toS(f.rx, f.ry - LABEL_UP);
       if (X < -50 || X > this.vw + 50 || Y < -40 || Y > this.vh + 40) continue;
       const hp = Math.round(f.shownHp);
       ctx.font = '600 11px system-ui, sans-serif';
@@ -654,10 +706,11 @@ export class View {
     }
     for (const e of this.fx) {
       if (e.k !== 'num') continue;
-      const [X, Y] = toS(e.x, e.y);
-      ctx.globalAlpha = Math.max(0, 1 - e.t / e.life);
-      ctx.font = '800 15px system-ui, sans-serif';
-      ctx.strokeStyle = 'rgba(0,0,0,0.6)'; ctx.lineWidth = 3;
+      const [X, Y] = toS(e.x, e.y + e.dy);
+      ctx.globalAlpha = Math.max(0, Math.min(1, (e.life - e.t) / NUM_FADE));
+      const pop = 1 + Math.max(0, 0.35 - e.t) * 1.4; // kleiner Aufpopp-Effekt
+      ctx.font = `800 ${Math.round(17 * pop)}px system-ui, sans-serif`;
+      ctx.strokeStyle = 'rgba(0,0,0,0.7)'; ctx.lineWidth = 4;
       ctx.strokeText(e.text, X, Y);
       ctx.fillStyle = e.c; ctx.fillText(e.text, X, Y);
       ctx.globalAlpha = 1;

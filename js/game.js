@@ -421,7 +421,15 @@ export class Game {
     const imp = f.vy;
     if (imp > 380) {
       const d = Math.min(30, Math.round((imp - 380) / 9));
-      if (d > 0) { f.hp = Math.max(0, f.hp - d); this.emit('dmg', f.id, d); }
+      if (d > 0) {
+        f.hp = Math.max(0, f.hp - d);
+        this.emit('dmg', f.id, d);
+        // Wer am Zug ist und sich beim Fallen wehtut, verliert den Rest seines Zuges
+        if (f.id === this.activeId && ['aim', 'shot', 'retreat'].includes(this.phase)) {
+          this.emit('fallhurt', f.id);
+          this.toSettle();
+        }
+      }
     }
     if (Math.abs(f.vx) > 140 || imp > 460) {
       f.vy = -imp * 0.28;
