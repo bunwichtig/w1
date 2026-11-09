@@ -29,6 +29,7 @@ function shade(hex, k) {
 }
 
 const FIG_SCALE = 1.3;
+const TOP_PAD = 110; // Bildschirm-Pixel über der Karte
 const OUTLINE = '#22202b';
 
 export class View {
@@ -258,7 +259,7 @@ export class View {
   }
 
   get zoom() {
-    const base = Math.max(this.vh < 520 ? 0.75 : 0.35, Math.min(1.4, this.vh / (this.H + 10)));
+    const base = Math.max(this.vh < 520 ? 0.75 : 0.35, Math.min(1.4, (this.vh - TOP_PAD) / (this.H + 10)));
     return base * this.zoomMul;
   }
 
@@ -281,7 +282,9 @@ export class View {
       this.cam.ty = (target.ry ?? target.y) - vh * 0.55;
     }
     const clampX = (v) => (this.W <= vw + 1 ? (this.W - vw) / 2 : Math.max(-60, Math.min(this.W - vw + 60, v)));
-    const clampY = (v) => (this.H + 10 <= vh + 1 ? this.H + 10 - vh : Math.max(Math.min(-120, this.H + 10 - vh), Math.min(this.H + 10 - vh, v)));
+    // Oben bleibt Platz für die Anzeige, Namen und das Fadenkreuz von Figuren auf Gipfeln.
+    const pad = TOP_PAD / z;
+    const clampY = (v) => (this.H + 10 + pad <= vh + 1 ? this.H + 10 - vh : Math.max(-pad, Math.min(this.H + 10 - vh, v)));
     this.cam.tx = clampX(this.cam.tx);
     this.cam.ty = clampY(this.cam.ty);
     if (!this.camInit) { this.cam.x = this.cam.tx; this.cam.y = this.cam.ty; this.camInit = true; }
