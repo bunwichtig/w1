@@ -74,3 +74,24 @@ test('Vorschläge für Name, Raum und Passwort', async () => {
   assert.ok(ROOMS.includes(randomRoom()));
   for (let i = 0; i < 50; i++) assert.match(randomPassword(), /^\d{3}\.[a-z]{3}$/);
 });
+
+test('Fallschaden beendet den Zug der aktiven Figur', () => {
+  const teams = [0, 1].map((i) => ({ name: 'T' + i, owner: 0 }));
+  const g = new Game(teams, { perTeam: 1, size: 'klein', mode: 'huegel', seed: 11, turnTime: 30 });
+  assert.equal(g.phase, 'aim');
+  const f = g.activeFig();
+  const hp = f.hp;
+  // hoch in die Luft setzen, damit sie tief fällt
+  let top = f.y;
+  while (top > 40 && !g.bodyHit(f.x, top - 1)) top--;
+  f.y = Math.max(20, f.y - 400 > top ? f.y - 400 : top);
+  f.air = true; f.vx = 0; f.vy = 300;
+  let hurt = false;
+  for (let i = 0; i < 600 && g.phase === 'aim'; i++) {
+    g.update(TICK);
+    if (g.takeEvents().some((e) => e[1] === 'fallhurt')) hurt = true;
+  }
+  assert.ok(f.hp < hp, 'Figur hat keinen Fallschaden genommen');
+  assert.ok(hurt, 'kein fallhurt-Ereignis');
+  assert.notEqual(g.phase, 'aim', 'Zug läuft nach Fallschaden weiter');
+});
